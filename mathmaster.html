@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathMaster — Du zéro à l'infini</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --border: #2a2a3d;
+    --accent: #7c5cfc;
+    --accent2: #fc5c7d;
+    --accent3: #5cfcb0;
+    --gold: #ffd166;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  h1,h2,h3,h4 { font-family: 'Syne', sans-serif; }
+
+  /* BG GRID */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(124,92,252,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,92,252,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* SCREENS */
+  .screen { display: none; position: relative; z-index: 1; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ===== HOME ===== */
+  #home {
+    align-items: center; justify-content: center;
+    padding: 40px 20px; text-align: center;
+  }
+  .logo-mark {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800;
+    margin: 0 auto 24px;
+    box-shadow: 0 0 60px rgba(124,92,252,0.4);
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 40px rgba(124,92,252,0.4); }
+    50% { box-shadow: 0 0 80px rgba(124,92,252,0.7); }
+  }
+  .home-title {
+    font-size: clamp(36px, 8vw, 64px);
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 30%, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .home-sub {
+    color: var(--muted); font-size: 14px;
+    margin-bottom: 48px; letter-spacing: 0.05em;
+  }
+  .levels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px; width: 100%; max-width: 560px;
+    margin-bottom: 32px;
+  }
+  .level-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .level-card::before {
+    content: ''; position: absolute; inset: 0;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .level-card:hover { transform: translateY(-4px); border-color: var(--accent); }
+  .level-card:hover::before { opacity: 1; }
+  .level-card .lvl-icon { font-size: 32px; margin-bottom: 8px; }
+  .level-card .lvl-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; }
+  .level-card .lvl-desc { font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .level-card .lvl-badge {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 9px; padding: 2px 6px;
+    border-radius: 20px; font-weight: 500;
+  }
+  .locked { opacity: 0.4; cursor: not-allowed; }
+  .locked:hover { transform: none; }
+
+  /* Colors per level */
+  .lv1 { --lc: #5cfcb0; }
+  .lv2 { --lc: #5cc8fc; }
+  .lv3 { --lc: #7c5cfc; }
+  .lv4 { --lc: #fc5c7d; }
+  .lv5 { --lc: #ffd166; }
+  .lv6 { --lc: #fc5c7d; }
+  .level-card .lvl-badge { background: color-mix(in srgb, var(--lc) 20%, transparent); color: var(--lc); border: 1px solid color-mix(in srgb, var(--lc) 40%, transparent); }
+  .level-card:hover { border-color: var(--lc); box-shadow: 0 8px 32px color-mix(in srgb, var(--lc) 20%, transparent); }
+
+  .start-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; color: white;
+    padding: 16px 40px; border-radius: 50px;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px;
+    cursor: pointer; transition: all 0.3s;
+    box-shadow: 0 8px 32px rgba(124,92,252,0.4);
+  }
+  .start-btn:hover { transform: scale(1.05); box-shadow: 0 12px 40px rgba(124,92,252,0.6); }
+
+  /* STATS ROW */
+  .stats-row {
+    display: flex; gap: 24px; margin-top: 32px;
+    justify-content: center;
+  }
+  .stat-item { text-align: center; }
+  .stat-num { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--accent); }
+  .stat-label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ===== LESSON SCREEN ===== */
+  #lesson {
+    padding: 0;
+  }
+  .lesson-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .back-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); width: 36px; height: 36px;
+    border-radius: 10px; cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .lesson-header-info { flex: 1; }
+  .lesson-level-tag {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--accent); margin-bottom: 2px;
+  }
+  .lesson-header h2 { font-size: 16px; font-weight: 700; }
+  .progress-wrap { margin-top: 6px; }
+  .progress-bar {
+    height: 3px; background: var(--border);
+    border-radius: 2px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px; transition: width 0.4s ease;
+  }
+
+  .lesson-body { padding: 24px 20px; flex: 1; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--surface2); border-radius: 12px; padding: 4px;
+    margin-bottom: 24px;
+  }
+  .tab-btn {
+    flex: 1; padding: 8px; border: none; border-radius: 8px;
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    background: transparent; color: var(--muted);
+  }
+  .tab-btn.active {
+    background: var(--accent); color: white;
+  }
+
+  /* Lesson content */
+  .lesson-content { display: none; }
+  .lesson-content.active { display: block; }
+
+  .concept-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px;
+  }
+  .concept-card h3 {
+    font-size: 14px; font-weight: 700; margin-bottom: 12px;
+    color: var(--accent3);
+  }
+  .concept-card p { font-size: 13px; line-height: 1.8; color: #b0b0c8; }
+  .math-example {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 16px;
+    font-size: 18px; text-align: center;
+    margin: 12px 0; letter-spacing: 0.05em;
+    color: var(--gold);
+  }
+  .tip-box {
+    background: color-mix(in srgb, var(--accent3) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent3) 30%, transparent);
+    border-radius: 10px; padding: 12px 16px;
+    font-size: 12px; color: var(--accent3); margin-top: 12px;
+  }
+
+  /* Quiz */
+  .quiz-question {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+    margin-bottom: 20px;
+  }
+  .quiz-q-text {
+    font-family: 'Syne', sans-serif; font-size: 20px;
+    font-weight: 700; margin-bottom: 20px; text-align: center;
+    color: var(--gold);
+  }
+  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .quiz-opt {
+    background: var(--surface2); border: 2px solid var(--border);
+    border-radius: 12px; padding: 14px 10px;
+    font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+    color: var(--text);
+  }
+  .quiz-opt:hover:not(.disabled) { border-color: var(--accent); color: var(--accent); }
+  .quiz-opt.correct { border-color: var(--accent3); background: color-mix(in srgb, var(--accent3) 15%, transparent); color: var(--accent3); }
+  .quiz-opt.wrong { border-color: var(--accent2); background: color-mix(in srgb, var(--accent2) 15%, transparent); color: var(--accent2); }
+  .quiz-opt.disabled { cursor: default; }
+  .quiz-feedback {
+    text-align: center; padding: 12px;
+    border-radius: 10px; font-size: 13px;
+    margin-top: 12px; display: none;
+  }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { background: color-mix(in srgb, var(--accent3) 15%, transparent); color: var(--accent3); }
+  .quiz-feedback.fail { background: color-mix(in srgb, var(--accent2) 15%, transparent); color: var(--accent2); }
+
+  .quiz-score {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; padding: 12px 16px;
+    background: var(--surface2); border-radius: 10px;
+  }
+  .score-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .score-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--accent); }
+
+  /* Challenge */
+  .challenge-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
+  }
+  .challenge-header {
+    display: flex; justify-content: space-between; margin-bottom: 16px;
+  }
+  .challenge-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; }
+  .diff-badge {
+    font-size: 10px; padding: 3px 8px; border-radius: 20px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .diff-easy { background: color-mix(in srgb, var(--accent3) 20%, transparent); color: var(--accent3); }
+  .diff-medium { background: color-mix(in srgb, var(--gold) 20%, transparent); color: var(--gold); }
+  .diff-hard { background: color-mix(in srgb, var(--accent2) 20%, transparent); color: var(--accent2); }
+  .challenge-problem {
+    font-size: 22px; text-align: center; padding: 20px;
+    background: var(--surface2); border-radius: 12px;
+    color: var(--gold); margin-bottom: 16px;
+    font-family: 'Syne', sans-serif; font-weight: 700;
+  }
+  .challenge-input-wrap { display: flex; gap: 10px; }
+  .challenge-input {
+    flex: 1; background: var(--surface2); border: 2px solid var(--border);
+    border-radius: 12px; padding: 12px 16px;
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: 16px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .challenge-input:focus { border-color: var(--accent); }
+  .check-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; color: white; padding: 12px 20px;
+    border-radius: 12px; font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 14px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .check-btn:hover { transform: scale(1.05); }
+
+  /* AI Button */
+  .ai-explain-btn {
+    width: 100%; background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--accent); border-radius: 12px; padding: 12px;
+    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 13px;
+    cursor: pointer; transition: all 0.2s; margin-top: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .ai-explain-btn:hover { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+  .ai-response {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 12px; padding: 16px; margin-top: 12px;
+    font-size: 13px; line-height: 1.8; color: #b0b0c8;
+    display: none;
+  }
+  .ai-response.show { display: block; }
+  .ai-loading {
+    display: flex; gap: 6px; justify-content: center; padding: 8px;
+  }
+  .ai-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent); animation: bounce 1s infinite;
+  }
+  .ai-dot:nth-child(2) { animation-delay: 0.2s; }
+  .ai-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-8px); opacity: 1; }
+  }
+
+  /* Next btn */
+  .next-lesson-btn {
+    width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; color: white; padding: 16px;
+    border-radius: 14px; font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 15px; cursor: pointer;
+    transition: all 0.3s; margin-top: 8px;
+    box-shadow: 0 8px 24px rgba(124,92,252,0.3);
+  }
+  .next-lesson-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(124,92,252,0.5); }
+
+  /* ===== RESULT ===== */
+  #result {
+    align-items: center; justify-content: center;
+    padding: 40px 20px; text-align: center;
+  }
+  .result-icon { font-size: 80px; margin-bottom: 16px; animation: pop 0.5s ease; }
+  @keyframes pop { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+  .result-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+  .result-sub { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+  .result-stats {
+    display: flex; gap: 20px; justify-content: center; margin-bottom: 32px;
+  }
+  .result-stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 24px; text-align: center;
+  }
+  .result-stat-num { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
+  .result-stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .result-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; }
+  .btn-outline {
+    background: transparent; border: 2px solid var(--border);
+    color: var(--text); padding: 14px; border-radius: 14px;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 50px; padding: 12px 24px;
+    font-size: 13px; font-weight: 500;
+    transition: transform 0.3s; z-index: 100;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== HOME ===== -->
+<div class="screen active" id="home">
+  <div class="logo-mark">∑</div>
+  <h1 class="home-title">Math<br>Master</h1>
+  <p class="home-sub">// du zéro à l'infini</p>
+
+  <div class="levels-grid">
+    <div class="level-card lv1" onclick="openLevel(0)">
+      <div class="lvl-icon">🌱</div>
+      <div class="lvl-name">Niveau 1</div>
+      <div class="lvl-desc">Bases & Chiffres</div>
+      <span class="lvl-badge">DÉBLOQUÉ</span>
+    </div>
+    <div class="level-card lv2" onclick="openLevel(1)">
+      <div class="lvl-icon">➕</div>
+      <div class="lvl-name">Niveau 2</div>
+      <div class="lvl-desc">Opérations</div>
+      <span class="lvl-badge">DÉBLOQUÉ</span>
+    </div>
+    <div class="level-card lv3" onclick="openLevel(2)">
+      <div class="lvl-icon">📐</div>
+      <div class="lvl-name">Niveau 3</div>
+      <div class="lvl-desc">Géométrie</div>
+      <span class="lvl-badge">DÉBLOQUÉ</span>
+    </div>
+    <div class="level-card lv4" onclick="openLevel(3)">
+      <div class="lvl-icon">📊</div>
+      <div class="lvl-name">Niveau 4</div>
+      <div class="lvl-desc">Algèbre</div>
+      <span class="lvl-badge">DÉBLOQUÉ</span>
+    </div>
+    <div class="level-card lv5" onclick="openLevel(4)">
+      <div class="lvl-icon">∫</div>
+      <div class="lvl-name">Niveau 5</div>
+      <div class="lvl-desc">Calcul Avancé</div>
+      <span class="lvl-badge">DÉBLOQUÉ</span>
+    </div>
+    <div class="level-card lv6" onclick="openLevel(5)">
+      <div class="lvl-icon">🧬</div>
+      <div class="lvl-name">Niveau 6</div>
+      <div class="lvl-desc">Expert</div>
+      <span class="lvl-badge">EXPERT</span>
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="openLevel(0)">▶ Commencer maintenant</button>
+
+  <div class="stats-row">
+    <div class="stat-item">
+      <div class="stat-num" id="total-xp">0</div>
+      <div class="stat-label">XP Total</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="total-done">0</div>
+      <div class="stat-label">Leçons</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="total-streak">0🔥</div>
+      <div class="stat-label">Série</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LESSON ===== -->
+<div class="screen" id="lesson">
+  <div class="lesson-header">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div class="lesson-header-info">
+      <div class="lesson-level-tag" id="lh-tag"></div>
+      <h2 id="lh-title"></h2>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lesson-body">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('learn')">📖 Apprendre</button>
+      <button class="tab-btn" onclick="switchTab('quiz')">🧠 Quiz</button>
+      <button class="tab-btn" onclick="switchTab('challenge')">⚡ Défi</button>
+    </div>
+
+    <!-- LEARN TAB -->
+    <div class="lesson-content active" id="tab-learn">
+      <div id="lesson-concepts"></div>
+      <button class="ai-explain-btn" onclick="askAI('explain')">
+        🤖 Explique-moi différemment avec l'IA
+      </button>
+      <div class="ai-response" id="ai-learn-response"></div>
+      <button class="next-lesson-btn" onclick="switchTab('quiz')" style="margin-top:16px">
+        Passer au Quiz →
+      </button>
+    </div>
+
+    <!-- QUIZ TAB -->
+    <div class="lesson-content" id="tab-quiz">
+      <div class="quiz-score">
+        <div><div class="score-label">Score</div><div class="score-val" id="quiz-score">0/0</div></div>
+        <div><div class="score-label">Précision</div><div class="score-val" id="quiz-acc">—</div></div>
+      </div>
+      <div id="quiz-container"></div>
+      <button class="next-lesson-btn" onclick="switchTab('challenge')" id="quiz-next" style="display:none">
+        Passer au Défi ⚡
+      </button>
+    </div>
+
+    <!-- CHALLENGE TAB -->
+    <div class="lesson-content" id="tab-challenge">
+      <div id="challenge-container"></div>
+      <button class="ai-explain-btn" onclick="askAI('challenge')">
+        🤖 Aide-moi avec ce défi (IA)
+      </button>
+      <div class="ai-response" id="ai-challenge-response"></div>
+      <button class="next-lesson-btn" onclick="finishLesson()" style="margin-top:16px">
+        ✅ Terminer la leçon
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div class="screen" id="result">
+  <div class="result-icon" id="result-icon">🏆</div>
+  <h2 class="result-title" id="result-title">Excellent !</h2>
+  <p class="result-sub" id="result-sub">Leçon terminée avec succès</p>
+  <div class="result-stats">
+    <div class="result-stat">
+      <div class="result-stat-num" id="res-xp" style="color:var(--accent)">+50</div>
+      <div class="result-stat-label">XP Gagné</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-num" id="res-score" style="color:var(--accent3)">5/5</div>
+      <div class="result-stat-label">Quiz</div>
+    </div>
+  </div>
+  <div class="result-btns">
+    <button class="start-btn" onclick="goHome()">🏠 Accueil</button>
+    <button class="btn-outline" onclick="nextLesson()">Leçon suivante →</button>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const LEVELS = [
+  {
+    id: 0, name: "Les Bases", tag: "NIVEAU 1 — DÉBUTANT",
+    icon: "🌱", color: "#5cfcb0",
+    lessons: [
+      {
+        title: "Compter & Chiffres",
+        concepts: [
+          { title: "Les chiffres de 0 à 9", text: "Les mathématiques commencent avec 10 symboles : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9. Avec ces 10 chiffres, on peut représenter n'importe quel nombre.", example: "0  1  2  3  4  5  6  7  8  9", tip: "💡 Le zéro est un chiffre ! Sans lui, on ne pourrait pas écrire 10, 100, 1000..." },
+          { title: "Les dizaines et centaines", text: "En combinant les chiffres, on crée des nombres plus grands. 10 = dix, 100 = cent, 1000 = mille.", example: "1+0 → 10  |  10+0 → 100", tip: "💡 Chaque position a une valeur : unités, dizaines, centaines..." }
+        ],
+        quiz: [
+          { q: "Combien de chiffres différents existe-t-il ?", opts: ["8","9","10","12"], ans: 2 },
+          { q: "Quel est le plus grand chiffre (1 seul symbole) ?", opts: ["8","9","10","7"], ans: 1 },
+          { q: "Que vaut 10 + 10 ?", opts: ["11","20","12","100"], ans: 1 },
+          { q: "Quel nombre vient après 99 ?", opts: ["100","999","98","101"], ans: 0 },
+        ],
+        challenge: { problem: "? + ? = 10\nTrouve 3 façons différentes", diff: "easy", hint: "1+9, 2+8, 5+5..." }
+      }
+    ]
+  },
+  {
+    id: 1, name: "Opérations", tag: "NIVEAU 2 — ÉLÉMENTAIRE",
+    icon: "➕", color: "#5cc8fc",
+    lessons: [
+      {
+        title: "Addition & Soustraction",
+        concepts: [
+          { title: "L'addition (+)", text: "L'addition combine deux quantités. Si tu as 3 pommes et qu'on t'en donne 5, tu en as 8 au total.", example: "3 + 5 = 8", tip: "💡 L'ordre n'a pas d'importance : 3+5 = 5+3 = 8 (propriété commutative)" },
+          { title: "La soustraction (−)", text: "La soustraction retire une quantité. Si tu as 10 bonbons et en manges 4, il en reste 6.", example: "10 − 4 = 6", tip: "💡 Attention : 10−4 ≠ 4−10. La soustraction n'est pas commutative !" }
+        ],
+        quiz: [
+          { q: "15 + 27 = ?", opts: ["41","42","43","40"], ans: 1 },
+          { q: "50 − 18 = ?", opts: ["28","32","30","38"], ans: 1 },
+          { q: "3 + 5 + 7 = ?", opts: ["14","15","16","13"], ans: 1 },
+          { q: "100 − 37 = ?", opts: ["73","63","67","43"], ans: 1 },
+        ],
+        challenge: { problem: "Un marchand a 48 oranges.\nIl vend 19 oranges le matin\net 15 l'après-midi.\nCombien lui en reste-t-il ?", diff: "medium", hint: "48 − 19 − 15 = ?" }
+      }
+    ]
+  },
+  {
+    id: 2, name: "Géométrie", tag: "NIVEAU 3 — INTERMÉDIAIRE",
+    icon: "📐", color: "#7c5cfc",
+    lessons: [
+      {
+        title: "Formes & Aires",
+        concepts: [
+          { title: "Les formes de base", text: "Les formes géométriques sont partout ! Triangle (3 côtés), Carré (4 côtés égaux), Rectangle (4 côtés, 2 paires égales), Cercle (aucun côté, rayon constant).", example: "△  □  ▭  ○", tip: "💡 Un carré est un rectangle spécial où tous les côtés sont égaux." },
+          { title: "Aire et Périmètre", text: "Le périmètre = distance autour de la forme. L'aire = surface à l'intérieur.", example: "Rectangle : P = 2×(L+l)  |  A = L×l", tip: "💡 Aire d'un triangle = (base × hauteur) ÷ 2" }
+        ],
+        quiz: [
+          { q: "Aire d'un rectangle 6×4 ?", opts: ["20","24","10","28"], ans: 1 },
+          { q: "Périmètre d'un carré de côté 5 ?", opts: ["20","10","25","15"], ans: 0 },
+          { q: "Combien de côtés a un hexagone ?", opts: ["5","7","6","8"], ans: 2 },
+          { q: "Aire d'un triangle base 8, h 3 ?", opts: ["24","12","11","16"], ans: 1 },
+        ],
+        challenge: { problem: "Un jardin rectangulaire\nfait 12m × 8m.\nQuel est son aire ?\nEt son périmètre ?", diff: "medium", hint: "A = 12×8 | P = 2×(12+8)" }
+      }
+    ]
+  },
+  {
+    id: 3, name: "Algèbre", tag: "NIVEAU 4 — AVANCÉ",
+    icon: "📊", color: "#fc5c7d",
+    lessons: [
+      {
+        title: "Équations & Inconnues",
+        concepts: [
+          { title: "Qu'est-ce qu'une équation ?", text: "Une équation est une égalité avec une inconnue (souvent x). Résoudre = trouver la valeur de x.", example: "2x + 3 = 11  →  x = 4", tip: "💡 Ce qu'on fait d'un côté, on doit le faire de l'autre !" },
+          { title: "Systèmes d'équations", text: "Deux équations à deux inconnues. On résout par substitution ou par combinaison.", example: "x + y = 5\nx − y = 1\n→ x=3, y=2", tip: "💡 Stratégie : isole une variable dans une équation, substitue dans l'autre." }
+        ],
+        quiz: [
+          { q: "Si 3x = 12, alors x = ?", opts: ["3","4","5","6"], ans: 1 },
+          { q: "Si x + 7 = 15, alors x = ?", opts: ["8","7","9","22"], ans: 0 },
+          { q: "Si 2x - 4 = 10, alors x = ?", opts: ["3","5","7","4"], ans: 2 },
+          { q: "Si x/3 = 6, alors x = ?", opts: ["2","9","18","12"], ans: 2 },
+        ],
+        challenge: { problem: "Paul a le double de l'âge de Marie.\nDans 5 ans, la somme de leurs âges\nsera 40. Quel âge ont-ils maintenant ?", diff: "hard", hint: "P = 2M  |  (P+5)+(M+5) = 40" }
+      }
+    ]
+  },
+  {
+    id: 4, name: "Calcul Avancé", tag: "NIVEAU 5 — EXPERT",
+    icon: "∫", color: "#ffd166",
+    lessons: [
+      {
+        title: "Dérivées & Intégrales",
+        concepts: [
+          { title: "La dérivée", text: "La dérivée mesure la vitesse de changement d'une fonction. f'(x) = limite du taux de variation. Règles : d/dx(xⁿ) = n·xⁿ⁻¹", example: "f(x) = x³  →  f'(x) = 3x²", tip: "💡 La dérivée = la pente de la tangente au graphe en ce point." },
+          { title: "L'intégrale", text: "L'intégrale est l'opération inverse de la dérivée. Elle calcule l'aire sous une courbe.", example: "∫x² dx = x³/3 + C", tip: "💡 C = constante d'intégration, car la dérivée d'une constante = 0." }
+        ],
+        quiz: [
+          { q: "Dérivée de f(x) = x⁴ ?", opts: ["4x³","3x³","4x⁴","x³"], ans: 0 },
+          { q: "∫2x dx = ?", opts: ["x²+C","2x²+C","x+C","2+C"], ans: 0 },
+          { q: "Dérivée de f(x) = 5 ?", opts: ["5","1","0","5x"], ans: 2 },
+          { q: "Dérivée de f(x) = x² + 3x ?", opts: ["2x+3","x+3","2x","3x+1"], ans: 0 },
+        ],
+        challenge: { problem: "Calcule :\n∫₀² (3x² + 2x) dx", diff: "hard", hint: "= [x³ + x²]₀² = (8+4)−(0) = 12" }
+      }
+    ]
+  },
+  {
+    id: 5, name: "Expert", tag: "NIVEAU 6 — MAÎTRE",
+    icon: "🧬", color: "#fc5c7d",
+    lessons: [
+      {
+        title: "Mathématiques Profondes",
+        concepts: [
+          { title: "Les nombres complexes", text: "i = √(−1). Un nombre complexe z = a + bi. Le plan complexe généralise la droite réelle en 2D.", example: "z = 3 + 4i  |  |z| = √(9+16) = 5", tip: "💡 Les complexes permettent de résoudre x² + 1 = 0 !" },
+          { title: "Transformée de Fourier", text: "Décompose un signal en fréquences. Fondamental en traitement du signal, IA, physique quantique.", example: "F(ω) = ∫f(t)·e^(−iωt) dt", tip: "💡 Ton lecteur MP3 utilise la FFT (Fast Fourier Transform) !" }
+        ],
+        quiz: [
+          { q: "Que vaut i² ?", opts: ["1","-1","i","0"], ans: 1 },
+          { q: "|3 + 4i| = ?", opts: ["7","5","12","1"], ans: 1 },
+          { q: "(1+i)² = ?", opts: ["2","2i","1+2i","0"], ans: 1 },
+          { q: "e^(iπ) = ?", opts: ["1","-1","i","0"], ans: 1 },
+        ],
+        challenge: { problem: "Montre que :\ne^(iπ) + 1 = 0\n(Identité d'Euler)\nPourquoi est-ce 'la plus belle\néquation des maths' ?", diff: "hard", hint: "Formule d'Euler : e^(ix) = cos(x) + i·sin(x)" }
+      }
+    ]
+  }
+];
+
+// ===== STATE =====
+let state = {
+  xp: 0, streak: 0, done: 0,
+  currentLevel: 0, currentLesson: 0,
+  quizAnswered: 0, quizCorrect: 0,
+  activeTab: 'learn'
+};
+
+function saveState() { localStorage.setItem('mm_state', JSON.stringify(state)); }
+function loadState() {
+  const s = localStorage.getItem('mm_state');
+  if (s) state = { ...state, ...JSON.parse(s) };
+  updateHomeStats();
+}
+
+function updateHomeStats() {
+  document.getElementById('total-xp').textContent = state.xp;
+  document.getElementById('total-done').textContent = state.done;
+  document.getElementById('total-streak').textContent = state.streak + '🔥';
+}
+
+// ===== NAVIGATION =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function goHome() { showScreen('home'); updateHomeStats(); }
+
+function openLevel(lvlIdx) {
+  state.currentLevel = lvlIdx;
+  state.currentLesson = 0;
+  state.quizAnswered = 0;
+  state.quizCorrect = 0;
+  loadLesson();
+  showScreen('lesson');
+}
+
+function loadLesson() {
+  const lvl = LEVELS[state.currentLevel];
+  const lesson = lvl.lessons[state.currentLesson];
+
+  document.getElementById('lh-tag').textContent = lvl.tag;
+  document.getElementById('lh-title').textContent = lesson.title;
+  document.getElementById('progress-fill').style.width = '0%';
+
+  // Build concepts
+  let html = '';
+  lesson.concepts.forEach(c => {
+    html += `<div class="concept-card">
+      <h3>${c.title}</h3>
+      <p>${c.text}</p>
+      <div class="math-example">${c.example.replace(/\n/g,'<br>')}</div>
+      ${c.tip ? `<div class="tip-box">${c.tip}</div>` : ''}
+    </div>`;
+  });
+  document.getElementById('lesson-concepts').innerHTML = html;
+
+  // Build quiz
+  buildQuiz(lesson.quiz);
+
+  // Build challenge
+  buildChallenge(lesson.challenge);
+
+  // Reset tabs
+  switchTab('learn');
+  state.quizAnswered = 0; state.quizCorrect = 0;
+  updateQuizScore();
+}
+
+function buildQuiz(questions) {
+  let html = '';
+  questions.forEach((q, qi) => {
+    html += `<div class="quiz-question" id="qq-${qi}">
+      <div class="quiz-q-text">${q.q}</div>
+      <div class="quiz-options">
+        ${q.opts.map((o,oi) => `<button class="quiz-opt" onclick="answerQuiz(${qi},${oi},${q.ans})" id="qo-${qi}-${oi}">${o}</button>`).join('')}
+      </div>
+      <div class="quiz-feedback" id="qf-${qi}"></div>
+    </div>`;
+  });
+  document.getElementById('quiz-container').innerHTML = html;
+  document.getElementById('quiz-next').style.display = 'none';
+}
+
+function answerQuiz(qi, selected, correct) {
+  const opts = document.querySelectorAll(`#qq-${qi} .quiz-opt`);
+  opts.forEach(o => { o.classList.add('disabled'); o.onclick = null; });
+  opts[selected].classList.add(selected === correct ? 'correct' : 'wrong');
+  if (selected !== correct) opts[correct].classList.add('correct');
+
+  const fb = document.getElementById(`qf-${qi}`);
+  fb.classList.add('show');
+  if (selected === correct) {
+    fb.textContent = '✅ Correct !'; fb.className = 'quiz-feedback show ok';
+    state.quizCorrect++;
+  } else {
+    fb.textContent = `❌ La bonne réponse était : ${LEVELS[state.currentLevel].lessons[state.currentLesson].quiz[qi].opts[correct]}`;
+    fb.className = 'quiz-feedback show fail';
+  }
+  state.quizAnswered++;
+  updateQuizScore();
+
+  const total = LEVELS[state.currentLevel].lessons[state.currentLesson].quiz.length;
+  if (state.quizAnswered === total) {
+    document.getElementById('quiz-next').style.display = 'block';
+    updateProgress(66);
+  }
+}
+
+function updateQuizScore() {
+  document.getElementById('quiz-score').textContent = `${state.quizCorrect}/${state.quizAnswered}`;
+  const acc = state.quizAnswered > 0 ? Math.round(state.quizCorrect / state.quizAnswered * 100) + '%' : '—';
+  document.getElementById('quiz-acc').textContent = acc;
+}
+
+function buildChallenge(ch) {
+  document.getElementById('challenge-container').innerHTML = `
+    <div class="challenge-card">
+      <div class="challenge-header">
+        <div class="challenge-title">⚡ Défi</div>
+        <span class="diff-badge diff-${ch.diff}">${ch.diff}</span>
+      </div>
+      <div class="challenge-problem">${ch.problem.replace(/\n/g,'<br>')}</div>
+      <div class="challenge-input-wrap">
+        <input type="text" class="challenge-input" id="ch-input" placeholder="Ta réponse...">
+        <button class="check-btn" onclick="checkChallenge()">Vérifier</button>
+      </div>
+      <div class="quiz-feedback" id="ch-fb"></div>
+    </div>
+  `;
+}
+
+function checkChallenge() {
+  const val = document.getElementById('ch-input').value.trim();
+  const fb = document.getElementById('ch-fb');
+  fb.classList.add('show');
+  if (val.length > 0) {
+    fb.textContent = '✅ Réponse enregistrée ! Compare avec l\'IA pour vérifier.';
+    fb.className = 'quiz-feedback show ok';
+    updateProgress(100);
+  } else {
+    fb.textContent = '⚠️ Entre une réponse d\'abord';
+    fb.className = 'quiz-feedback show fail';
+  }
+}
+
+function switchTab(tab) {
+  state.activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['learn','quiz','challenge'][i] === tab);
+  });
+  document.querySelectorAll('.lesson-content').forEach((c,i) => {
+    c.classList.toggle('active', ['learn','quiz','challenge'][i] === tab);
+  });
+  const prog = { learn: 33, quiz: 66, challenge: 100 };
+  updateProgress(prog[tab]);
+}
+
+function updateProgress(pct) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+// ===== AI =====
+async function askAI(context) {
+  const lvl = LEVELS[state.currentLevel];
+  const lesson = lvl.lessons[state.currentLesson];
+  const respId = context === 'explain' ? 'ai-learn-response' : 'ai-challenge-response';
+  const resp = document.getElementById(respId);
+  resp.className = 'ai-response show';
+  resp.innerHTML = '<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+
+  let prompt = '';
+  if (context === 'explain') {
+    prompt = `Tu es un professeur de mathématiques bienveillant. Explique "${lesson.title}" en ${lvl.name} de façon simple, avec une analogie du quotidien. Max 3 phrases. Réponds en français.`;
+  } else {
+    prompt = `Tu es un prof de maths. Voici un défi : "${lesson.challenge.problem}". Donne un indice utile SANS donner la réponse complète. 2-3 phrases max. En français.`;
+  }
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.map(i => i.text || '').join('') || "Une erreur s'est produite.";
+    resp.innerHTML = `<span style="color:var(--accent)">🤖 IA :</span> ${text}`;
+  } catch (e) {
+    resp.innerHTML = `<span style="color:var(--accent2)">Erreur de connexion à l'IA.</span>`;
+  }
+}
+
+// ===== FINISH =====
+function finishLesson() {
+  const xpGained = 50 + state.quizCorrect * 10;
+  state.xp += xpGained;
+  state.done++;
+  state.streak++;
+  saveState();
+
+  const score = `${state.quizCorrect}/${LEVELS[state.currentLevel].lessons[state.currentLesson].quiz.length}`;
+  const pct = state.quizAnswered > 0 ? state.quizCorrect / state.quizAnswered : 0;
+
+  document.getElementById('result-icon').textContent = pct >= 0.8 ? '🏆' : pct >= 0.5 ? '⭐' : '📚';
+  document.getElementById('result-title').textContent = pct >= 0.8 ? 'Excellent !' : pct >= 0.5 ? 'Bien joué !' : 'Continue ainsi !';
+  document.getElementById('result-sub').textContent = LEVELS[state.currentLevel].lessons[state.currentLesson].title + ' — Terminé';
+  document.getElementById('res-xp').textContent = '+' + xpGained;
+  document.getElementById('res-score').textContent = score;
+
+  showScreen('result');
+}
+
+function nextLesson() {
+  const lvl = LEVELS[state.currentLevel];
+  if (state.currentLesson + 1 < lvl.lessons.length) {
+    state.currentLesson++;
+    loadLesson();
+    showScreen('lesson');
+  } else if (state.currentLevel + 1 < LEVELS.length) {
+    state.currentLevel++;
+    state.currentLesson = 0;
+    loadLesson();
+    showScreen('lesson');
+    showToast('🎉 Niveau ' + (state.currentLevel + 1) + ' débloqué !');
+  } else {
+    showToast('🏆 Tu as maîtrisé tous les niveaux !');
+    goHome();
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== INIT =====
+loadState();
+</script>
+</body>
+</html>
